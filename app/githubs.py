@@ -110,17 +110,38 @@ class GithubClient:
                 continue
             if self.comment_per_file:
                 # Create a review comment on the file
-                reviewComments = f'''@{pr.user.login} Thanks for your contributions!\n\n{completion}'''
-                line_no = re.search('\@\@ \-(\d+),', file.patch).group(1)
-                pr.create_review_comment(body=reviewComments,
-                                         commit=list(pr.get_commits())[-1],
-                                         path=file.filename,
-                                         line=int(line_no))
+                try:
+                    reviewComments = f'''@{pr.user.login} Thanks for your contributions!\n\n{completion}'''
+                    line_no = re.search('\@\@ \-(\d+),', file.patch).group(1)
+                    pr.create_review_comment(body=reviewComments,
+                                             commit=list(pr.get_commits())[-1],
+                                             path=file.filename,
+                                             line=int(line_no))
+                except Exception as e:
+                    print(f"Error creating review comment for file {file.filename}: {str(e)}")
+                    if "403" in str(e) or "Forbidden" in str(e):
+                        print("💡 This is likely a permissions issue. Please ensure your workflow has:")
+                        print("   permissions:")
+                        print("     pull-requests: write")
+                        print("     contents: read")
+                        print("   Or use 'pull_request_target' instead of 'pull_request' for forks.")
+                    # Fall back to adding to general review
+                    reviews = reviews + \
+                        [f"**Here are review comments for file {file.filename}:**\n{completion}\n\n"]
             else:
                 reviews = reviews + \
                     [f"**Here are review comments for file {file.filename}:**\n{completion}\n\n"]
 
         if len(reviews) > 0:
             # Create a review comment on the PR
-            reviewComments = f'''@{pr.user.login} Thanks for your contributions!\n\n{''.join(reviews)}'''
-            pr.create_issue_comment(reviewComments)
+            try:
+                reviewComments = f'''@{pr.user.login} Thanks for your contributions!\n\n{''.join(reviews)}'''
+                pr.create_issue_comment(reviewComments)
+            except Exception as e:
+                print(f"Error creating issue comment: {str(e)}")
+                if "403" in str(e) or "Forbidden" in str(e):
+                    print("💡 This is likely a permissions issue. Please ensure your workflow has:")
+                    print("   permissions:")
+                    print("     pull-requests: write")
+                    print("     contents: read")
+                    print("   Or use 'pull_request_target' instead of 'pull_request' for forks.")

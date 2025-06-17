@@ -45,6 +45,9 @@ jobs:
   chatgpt-review:
     name: ChatGPT Review
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
     steps:
     - name: ChatGPT Reviewer
       uses: danylevych/ChatGPT-Reviewer@main
@@ -58,6 +61,39 @@ jobs:
         review_per_file: true
         comment_per_file: true
 ```
+
+### For Public Repository Forks
+
+If you're working with public repositories and forks, use `pull_request_target` instead of `pull_request` to ensure proper permissions:
+
+```yaml
+name: ChatGPT Review
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+jobs:
+  chatgpt-review:
+    name: ChatGPT Review
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+    - name: ChatGPT Reviewer
+      uses: danylevych/ChatGPT-Reviewer@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      with:
+        model: "gpt-4.1-mini"
+        temperature: 0.2
+        review_per_file: true
+        comment_per_file: true
+```
+
+⚠️ **Security Note**: `pull_request_target` runs in the context of the base repository, so it has access to secrets. Only use this for trusted contributors.
 
 ## ⚙️ Configuration
 
@@ -139,6 +175,14 @@ with:
 
 ### Common Issues
 
+**Q: Getting "403 Forbidden" or "Resource not accessible by integration"**
+A: Add the `permissions` section to your workflow as shown above. Ensure your workflow has:
+```yaml
+permissions:
+  pull-requests: write
+  contents: read
+```
+
 **Q: Getting "OpenAI API key not found"**
 A: Ensure `OPENAI_API_KEY` is set in your repository secrets
 
@@ -150,6 +194,24 @@ A: Verify `OPENAI_API_BASE` is set and model name matches your deployment
 
 **Q: Rate limiting errors**
 A: The action includes automatic retry logic, but consider using GPT-4.1-mini for high-volume usage
+
+**Q: Getting "ResolutionImpossible" error during Docker build**
+A: This indicates dependency conflicts. Make sure your `requirements.txt` doesn't have:
+- Duplicate package entries
+- Conflicting version requirements
+- Unnecessary packages (like `argparse` which is built into Python)
+
+### Repository Settings
+
+For the action to work properly, ensure:
+
+1. **Repository Settings**: Go to Settings → Actions → General → Workflow permissions
+   - Select "Read and write permissions"
+   - Check "Allow GitHub Actions to create and approve pull requests"
+
+2. **Branch Protection**: If you have branch protection rules, ensure the action can post comments
+
+3. **Fork Handling**: For public repositories with external contributors, use `pull_request_target` with caution
 
 ## 🔄 Migration from Original Version
 
