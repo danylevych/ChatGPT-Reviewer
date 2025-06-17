@@ -1,6 +1,6 @@
 name: "ChatGPT Reviewer"
-author: "Pengfei Ni"
-description: "Automated pull requests reviewing and issues triaging with ChatGPT"
+author: "danylevych"
+description: "Automated pull requests reviewing and issues triaging with ChatGPT (Updated with latest OpenAI API)"
 inputs:
   GITHUB_TOKEN:
     description: "Github token used to send out review comments"
@@ -13,7 +13,7 @@ inputs:
     required: false
   model:
     description: "OpenAI model name"
-    default: "gpt-3.5-turbo"
+    default: "gpt-4.1-mini"
     required: false
   blocking:
     description: "Blocking the pull requests on OpenAI failures"
